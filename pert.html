@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PERT Estimator Pro - Bootstrap</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+        }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #e0e0e0; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #a0a0a0; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #808080; }
+        .table-cell-input { min-width: 70px; }
+        .table-sticky-header thead th { position: sticky; top: 0; background-color: #e9ecef; z-index: 10; }
+        #messageToastContainer { z-index: 1050; }
+        .probability-section { margin-top: 1.5rem; padding: 1rem; background-color: #e9ecef; border-radius: 0.375rem;}
+        .tooltip-inner {
+            max-width: 250px; 
+            padding: .5rem .75rem;
+            color: #fff;
+            text-align: center;
+            background-color: #343a40; 
+            border-radius: .25rem;
+            font-size: 0.875rem;
+        }
+        .tooltip-arrow::before {
+            border-top-color: #343a40; 
+        }
+        #savedProjectsList .list-group-item {
+            cursor: pointer;
+        }
+        #savedProjectsList .list-group-item:hover {
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body class="text-dark">
+    <div class="container my-4 my-sm-5">
+        <header class="mb-5 text-center">
+            <h1 class="display-4 fw-bold text-primary">PERT Estimator Pro</h1>
+            <p class="fs-5 text-muted mt-2">Plan your projects with precision.</p>
+        </header>
+
+        <div id="projectStartScreen">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <h2 class="card-title fs-4 fw-semibold mb-3">Create New Project</h2>
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md">
+                            <label for="newProjectNameInput" class="form-label">New Project Name:</label>
+                            <input type="text" id="newProjectNameInput" class="form-control form-control-lg" placeholder="e.g., Website Redesign">
+                        </div>
+                        <div class="col-md-auto">
+                            <button id="createNewProjectBtn" class="btn btn-primary btn-lg w-100">
+                                <i class="bi bi-plus-circle-fill me-2"></i>Create Project
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h3 class="fs-5 fw-medium mb-0 py-2">Manage Projects</h3>
+                </div>
+                <div class="card-body p-4">
+                    <div id="savedProjectsContainer">
+                        <h4 class="fs-6 fw-semibold mb-3 text-muted">Saved Projects:</h4>
+                        <div id="savedProjectsList" class="list-group mb-3">
+                            <p id="noSavedProjectsMsg" class="text-muted">No projects saved yet.</p>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-column flex-sm-row gap-2 mt-3">
+                        <button id="importJsonBtnSetup" class="btn btn-outline-secondary flex-grow-1">
+                            <i class="bi bi-box-arrow-up me-2"></i>Import Project from JSON
+                        </button>
+                        <button id="clearAllProjectsBtn" class="btn btn-danger flex-grow-1 d-none">
+                            <i class="bi bi-trash3-fill me-2"></i>Clear All Saved Projects
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="toast-container position-fixed bottom-0 end-0 p-3" id="messageToastContainer"></div>
+
+        <div id="taskManagementSection" class="card shadow-sm d-none">
+            <div class="card-header bg-light p-3">
+                 <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-2">
+                    <div>
+                        <button id="backToProjectsBtn" class="btn btn-sm btn-outline-secondary mb-2 mb-sm-0 me-2">
+                            <i class="bi bi-arrow-left-circle"></i> Back to Projects
+                        </button>
+                        <h2 class="fs-4 fw-semibold mb-0 d-inline-block">Project: <span id="currentProjectNameDisplay" class="text-primary"></span></h2>
+                    </div>
+                    <div class="mt-2 mt-sm-0 d-flex flex-wrap gap-2">
+                        <button id="exportJsonBtnHeader" class="btn btn-outline-success"><i class="bi bi-box-arrow-down me-2"></i>Export Project</button>
+                    </div>
+                </div>
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-6">
+                        <p id="taskCount" class="text-muted mb-0"></p>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="desiredCompletionTime" class="form-label visually-hidden">Desired Completion Time:</label>
+                        <div class="input-group">
+                             <span class="input-group-text"><i class="bi bi-calendar-check"></i></span>
+                            <input type="number" id="desiredCompletionTime" class="form-control" placeholder="Desired Completion Time" min="0" step="any">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-4">
+                <div class="p-3 mb-4 border rounded bg-light">
+                    <h3 id="taskFormTitle" class="fs-5 fw-medium mb-3">Add New Task</h3>
+                    <div class="row g-3 align-items-end">
+                        <div class="col-lg-3 col-md-6">
+                            <label for="taskName" class="form-label">Task Name:</label>
+                            <input type="text" id="taskName" class="form-control" placeholder="e.g., Design UI">
+                        </div>
+                        <div class="col-lg-2 col-md-6">
+                            <label for="optimisticTime" class="form-label">Optimistic (O):</label>
+                            <input type="number" id="optimisticTime" class="form-control table-cell-input" placeholder="e.g., 2" min="0" step="any">
+                        </div>
+                        <div class="col-lg-2 col-md-6">
+                            <label for="mostLikelyTime" class="form-label">Most Likely (M):</label>
+                            <input type="number" id="mostLikelyTime" class="form-control table-cell-input" placeholder="e.g., 4" min="0" step="any">
+                        </div>
+                        <div class="col-lg-2 col-md-6">
+                            <label for="pessimisticTime" class="form-label">Pessimistic (P):</label>
+                            <input type="number" id="pessimisticTime" class="form-control table-cell-input" placeholder="e.g., 8" min="0" step="any">
+                        </div>
+                        <div class="col-lg-3 col-md-12 mt-3 mt-lg-0">
+                             <div class="d-flex flex-column flex-sm-row gap-2">
+                                <button id="addOrUpdateTaskBtn" class="btn btn-primary w-100"><i class="bi bi-plus-lg me-1"></i>Add Task</button>
+                                <button id="cancelEditBtn" class="btn btn-secondary w-100 d-none"><i class="bi bi-x-lg me-1"></i>Cancel Edit</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="fs-5 fw-medium mb-3">Task List & Estimates</h3>
+                <div class="table-responsive rounded border shadow-sm">
+                    <table class="table table-striped table-hover table-sticky-header mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="px-3 py-2">Task Name</th><th class="px-3 py-2">O</th><th class="px-3 py-2">M</th><th class="px-3 py-2">P</th>
+                                <th class="px-3 py-2">Expected (te)</th><th class="px-3 py-2">Variance (V)</th><th class="px-3 py-2 text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tasksTableBody">
+                            <tr id="noTasksRow"><td colspan="7" class="px-3 py-5 text-center text-muted">No tasks added yet.</td></tr>
+                        </tbody>
+                        <tfoot class="table-group-divider">
+                            <tr class="fw-bold table-light">
+                                <td class="px-3 py-2">Project Totals:</td>
+                                <td id="totalOptimistic" class="px-3 py-2">0.00</td><td id="totalMostLikely" class="px-3 py-2">0.00</td><td id="totalPessimistic" class="px-3 py-2">0.00</td>
+                                <td id="totalExpectedTime" class="px-3 py-2">0.00</td><td id="totalVariance" class="px-3 py-2">0.00</td><td class="px-3 py-2"></td> 
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <div id="probabilityAnalysisSection" class="probability-section mt-4">
+                    <h4 class="fs-5 fw-medium mb-3">Project Completion Probability</h4>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <p class="mb-1"><strong class="text-muted" data-bs-toggle="tooltip" data-bs-placement="top" title="Measures the expected variation or spread in the project's total completion time. A smaller value means more certainty.">Project Standard Deviation (σ): <i class="bi bi-info-circle"></i></strong></p>
+                            <p class="fs-5 fw-semibold" id="projectStdDevDisplay">-</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p class="mb-1"><strong class="text-muted" data-bs-toggle="tooltip" data-bs-placement="top" title="Indicates how many standard deviations your 'Desired Completion Time' is from the project's average expected completion time. It helps determine probability.">Z-score: <i class="bi bi-info-circle"></i></strong></p>
+                            <p class="fs-5 fw-semibold" id="zScoreDisplay">-</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p class="mb-1"><strong class="text-muted">Likelihood of Completion:</strong></p>
+                            <p class="fs-4 fw-bold text-success" id="probabilityDisplay">-</p>
+                        </div>
+                    </div>
+                     <p id="probabilityMessage" class="form-text mt-2"></p>
+                </div>
+            </div>
+        </div>
+        <input type="file" id="importJsonInput" class="d-none" accept=".json">
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script>
+        const LOCAL_STORAGE_KEY = 'pertEstimatorProjects';
+        let allProjects = []; // Array to hold all projects from Local Storage
+        let currentProject = null; // The currently active project object
+        let editingTaskId = null;
+
+        // --- DOM Elements ---
+        const projectStartScreen = document.getElementById('projectStartScreen');
+        const newProjectNameInput = document.getElementById('newProjectNameInput');
+        const createNewProjectBtn = document.getElementById('createNewProjectBtn');
+        const savedProjectsListEl = document.getElementById('savedProjectsList');
+        const noSavedProjectsMsgEl = document.getElementById('noSavedProjectsMsg');
+        const importJsonBtnSetup = document.getElementById('importJsonBtnSetup');
+        const clearAllProjectsBtn = document.getElementById('clearAllProjectsBtn');
+        
+        const taskManagementSection = document.getElementById('taskManagementSection');
+        const backToProjectsBtn = document.getElementById('backToProjectsBtn');
+        const currentProjectNameDisplay = document.getElementById('currentProjectNameDisplay');
+        const taskCountEl = document.getElementById('taskCount');
+        const desiredCompletionTimeInput = document.getElementById('desiredCompletionTime');
+        
+        const taskFormTitle = document.getElementById('taskFormTitle');
+        const taskNameInput = document.getElementById('taskName');
+        const optimisticTimeInput = document.getElementById('optimisticTime');
+        const mostLikelyTimeInput = document.getElementById('mostLikelyTime');
+        const pessimisticTimeInput = document.getElementById('pessimisticTime');
+        const addOrUpdateTaskBtn = document.getElementById('addOrUpdateTaskBtn');
+        const cancelEditBtn = document.getElementById('cancelEditBtn');
+        
+        const tasksTableBody = document.getElementById('tasksTableBody');
+        const noTasksRow = document.getElementById('noTasksRow');
+        
+        const totalOptimisticEl = document.getElementById('totalOptimistic');
+        const totalMostLikelyEl = document.getElementById('totalMostLikely');
+        const totalPessimisticEl = document.getElementById('totalPessimistic');
+        const totalExpectedTimeEl = document.getElementById('totalExpectedTime');
+        const totalVarianceEl = document.getElementById('totalVariance');
+        
+        const exportJsonBtnHeader = document.getElementById('exportJsonBtnHeader');
+        // const importJsonBtnHeader = document.getElementById('importJsonBtnHeader'); // Removed as import is on start screen
+        
+        const importJsonInput = document.getElementById('importJsonInput'); 
+        const messageToastContainer = document.getElementById('messageToastContainer');
+
+        const probabilityAnalysisSection = document.getElementById('probabilityAnalysisSection');
+        const projectStdDevDisplay = document.getElementById('projectStdDevDisplay');
+        const zScoreDisplay = document.getElementById('zScoreDisplay');
+        const probabilityDisplay = document.getElementById('probabilityDisplay');
+        const probabilityMessage = document.getElementById('probabilityMessage');
+
+        // --- Utility Functions ---
+        function displayMessage(message, type = 'info', duration = 4000) {
+            const toastId = 'toast-' + Date.now();
+            let bgColorClass = 'bg-info text-white', iconClass = 'bi-info-circle-fill';
+            if (type === 'success') { bgColorClass = 'bg-success text-white'; iconClass = 'bi-check-circle-fill'; }
+            else if (type === 'error') { bgColorClass = 'bg-danger text-white'; iconClass = 'bi-exclamation-triangle-fill'; }
+            else if (type === 'warning') { bgColorClass = 'bg-warning text-dark'; iconClass = 'bi-exclamation-triangle-fill'; }
+
+            const toastHTML = `<div id="${toastId}" class="toast align-items-center ${bgColorClass} border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="${duration}"><div class="d-flex"><div class="toast-body d-flex align-items-center"><i class="bi ${iconClass} me-2"></i>${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button></div></div>`;
+            messageToastContainer.insertAdjacentHTML('beforeend', toastHTML);
+            const toastElement = document.getElementById(toastId);
+            if (bootstrap && bootstrap.Toast) {
+                const toast = new bootstrap.Toast(toastElement);
+                toast.show();
+                toastElement.addEventListener('hidden.bs.toast', () => toastElement.remove());
+            } else { console.error("Bootstrap Toast component not found."); alert(message); }
+        }
+
+        function calculateTaskMetrics(o, m, p) {
+            if (isNaN(o) || isNaN(m) || isNaN(p) || o < 0 || m < 0 || p < 0) return { te: 0, variance: 0 };
+            const te = (o + 4 * m + p) / 6;
+            const variance = Math.pow((p - o) / 6, 2);
+            return { te, variance };
+        }
+        
+        function standardNormalCDF(z) {
+            const p = 0.2316419; const b1 = 0.319381530; const b2 = -0.356563782; const b3 = 1.781477937;
+            const b4 = -1.821255978; const b5 = 1.330274429; const t = 1 / (1 + p * Math.abs(z));
+            const pdf = (1 / Math.sqrt(2 * Math.PI)) * Math.exp(-0.5 * z * z);
+            let cdf = 1 - pdf * (b1 * t + b2 * Math.pow(t, 2) + b3 * Math.pow(t, 3) + b4 * Math.pow(t, 4) + b5 * Math.pow(t, 5));
+            if (z < 0) cdf = 1 - cdf;
+            return cdf;
+        }
+
+        // --- Local Storage Functions ---
+        function loadProjectsFromStorage() {
+            const projectsJson = localStorage.getItem(LOCAL_STORAGE_KEY);
+            allProjects = projectsJson ? JSON.parse(projectsJson) : [];
+            renderSavedProjectsList();
+        }
+
+        function saveAllProjectsToStorage() {
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(allProjects));
+            renderSavedProjectsList(); // Update the list on start screen
+        }
+        
+        function saveCurrentProject() {
+            if (!currentProject || !currentProject.id) return; // No active project or ID to save
+
+            const projectIndex = allProjects.findIndex(p => p.id === currentProject.id);
+            if (projectIndex > -1) {
+                allProjects[projectIndex] = { ...currentProject }; // Update existing
+            } else {
+                allProjects.push({ ...currentProject }); // Add new
+            }
+            saveAllProjectsToStorage();
+        }
+
+        // --- Project Management Functions ---
+        function handleCreateNewProject() {
+            const name = newProjectNameInput.value.trim();
+            if (!name) {
+                displayMessage("New Project Name cannot be empty.", "error");
+                newProjectNameInput.focus();
+                return;
+            }
+            // Check if project name already exists
+            if (allProjects.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+                displayMessage(`A project named "${name}" already exists. Please choose a different name.`, "warning");
+                newProjectNameInput.focus();
+                return;
+            }
+
+            currentProject = { 
+                id: Date.now(), // Assign a unique ID
+                name: name, 
+                tasks: [], 
+                desiredCompletionTime: null 
+            };
+            saveCurrentProject(); // Save to local storage via allProjects array
+            
+            currentProjectNameDisplay.textContent = name;
+            desiredCompletionTimeInput.value = ""; 
+            newProjectNameInput.value = ""; // Clear input
+
+            switchToTaskManagementView();
+            displayMessage(`Project "${name}" created and is now active.`, "success");
+            renderTasksTable(); 
+            renderTotalsAndProbability();
+            taskNameInput.focus();
+        }
+
+        function loadProjectForEditing(projectId) {
+            const projectToLoad = allProjects.find(p => p.id === projectId);
+            if (projectToLoad) {
+                currentProject = JSON.parse(JSON.stringify(projectToLoad)); // Deep copy to avoid direct mutation
+                
+                currentProjectNameDisplay.textContent = currentProject.name;
+                desiredCompletionTimeInput.value = currentProject.desiredCompletionTime !== null ? currentProject.desiredCompletionTime : "";
+                
+                switchToTaskManagementView();
+                renderTasksTable();
+                renderTotalsAndProbability();
+                taskNameInput.focus();
+            } else {
+                displayMessage("Could not load the selected project.", "error");
+            }
+        }
+        
+        function handleDeleteProjectFromList(projectId, event) {
+            event.stopPropagation(); // Prevent triggering loadProject if delete is on the same item
+            const projectToDelete = allProjects.find(p => p.id === projectId);
+            if (!projectToDelete) return;
+
+            if (confirm(`Are you sure you want to delete the project "${projectToDelete.name}"? This action cannot be undone.`)) {
+                allProjects = allProjects.filter(p => p.id !== projectId);
+                saveAllProjectsToStorage();
+                displayMessage(`Project "${projectToDelete.name}" deleted.`, "info");
+                if (currentProject && currentProject.id === projectId) { // If deleting the currently loaded project
+                    switchToStartScreen(); // Go back to start screen
+                    currentProject = null;
+                }
+            }
+        }
+
+        function handleClearAllProjects() {
+            if (allProjects.length === 0) {
+                displayMessage("No projects to clear.", "info");
+                return;
+            }
+            if (confirm("Are you sure you want to delete ALL saved projects? This action cannot be undone.")) {
+                allProjects = [];
+                currentProject = null; // Clear active project if any
+                localStorage.removeItem(LOCAL_STORAGE_KEY);
+                renderSavedProjectsList(); // Will show "No projects"
+                switchToStartScreen(); // Ensure start screen is shown
+                displayMessage("All saved projects have been cleared.", "success");
+            }
+        }
+        
+        function switchToStartScreen() {
+            taskManagementSection.classList.add('d-none');
+            projectStartScreen.classList.remove('d-none');
+            currentProject = null; // No active project on start screen
+            loadProjectsFromStorage(); // Refresh list
+            newProjectNameInput.focus();
+        }
+
+        function switchToTaskManagementView() {
+            projectStartScreen.classList.add('d-none');
+            taskManagementSection.classList.remove('d-none');
+        }
+
+
+        // --- Task & Calculation Functions (largely same, but save currentProject after modifications) ---
+        function handleAddOrUpdateTask() {
+            if (!currentProject) { displayMessage("No active project.", "error"); return; }
+
+            const taskNameVal = taskNameInput.value.trim();
+            const o = parseFloat(optimisticTimeInput.value);
+            const m = parseFloat(mostLikelyTimeInput.value);
+            const p = parseFloat(pessimisticTimeInput.value);
+
+            if (!taskNameVal) { displayMessage("Task name cannot be empty.", "error"); taskNameInput.focus(); return; }
+            if (isNaN(o) || isNaN(m) || isNaN(p) || o < 0 || m < 0 || p < 0) {
+                displayMessage("Optimistic, Most Likely, and Pessimistic times must be valid non-negative numbers.", "error");
+                // Focus logic...
+                return;
+            }
+            // Warning logic...
+
+            const { te, variance } = calculateTaskMetrics(o, m, p);
+
+            if (editingTaskId !== null) {
+                const taskIndex = currentProject.tasks.findIndex(task => task.id === editingTaskId);
+                if (taskIndex > -1) {
+                    currentProject.tasks[taskIndex] = { ...currentProject.tasks[taskIndex], name: taskNameVal, optimistic: o, mostLikely: m, pessimistic: p, expectedTime: te, variance };
+                    displayMessage(`Task "${taskNameVal}" updated.`, "success");
+                }
+                editingTaskId = null;
+            } else { 
+                const newTask = { id: Date.now(), name: taskNameVal, optimistic: o, mostLikely: m, pessimistic: p, expectedTime: te, variance };
+                currentProject.tasks.push(newTask);
+                displayMessage(`Task "${taskNameVal}" added.`, "success");
+            }
+            resetTaskForm();
+            renderTasksTable();
+            renderTotalsAndProbability();
+            saveCurrentProject(); // Save after task modification
+            taskNameInput.focus(); 
+        }
+        
+        function populateTaskFormForEdit(taskId) {
+            if (!currentProject) return;
+            const taskToEdit = currentProject.tasks.find(task => task.id === taskId);
+            // ... (rest of the function is the same)
+            if (taskToEdit) {
+                editingTaskId = taskId;
+                taskNameInput.value = taskToEdit.name;
+                optimisticTimeInput.value = taskToEdit.optimistic;
+                mostLikelyTimeInput.value = taskToEdit.mostLikely;
+                pessimisticTimeInput.value = taskToEdit.pessimistic;
+                taskFormTitle.textContent = "Edit Task";
+                addOrUpdateTaskBtn.innerHTML = `<i class="bi bi-check-lg me-1"></i>Update Task`;
+                addOrUpdateTaskBtn.classList.replace('btn-primary', 'btn-warning');
+                cancelEditBtn.classList.remove('d-none');
+                taskNameInput.focus();
+                taskFormTitle.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        function resetTaskForm() {
+            // ... (function is the same)
+            taskNameInput.value = ""; optimisticTimeInput.value = ""; mostLikelyTimeInput.value = ""; pessimisticTimeInput.value = "";
+            editingTaskId = null;
+            taskFormTitle.textContent = "Add New Task";
+            addOrUpdateTaskBtn.innerHTML = `<i class="bi bi-plus-lg me-1"></i>Add Task`;
+            addOrUpdateTaskBtn.classList.replace('btn-warning','btn-primary'); // ensure primary if it was warning
+            cancelEditBtn.classList.add('d-none');
+        }
+        
+        function deleteTask(taskId) {
+            if (!currentProject) return;
+            const taskIndex = currentProject.tasks.findIndex(task => task.id === taskId);
+            // ... (rest of the function is the same, but add saveCurrentProject())
+            if (taskIndex > -1) {
+                const taskNameVal = currentProject.tasks[taskIndex].name;
+                if (confirm(`Are you sure you want to delete the task "${taskNameVal}"?`)) {
+                    currentProject.tasks.splice(taskIndex, 1);
+                    displayMessage(`Task "${taskNameVal}" deleted.`, "info");
+                    if (editingTaskId === taskId) resetTaskForm();
+                    renderTasksTable();
+                    renderTotalsAndProbability();
+                    saveCurrentProject(); // Save after task deletion
+                }
+            }
+        }
+
+        function renderTasksTable() {
+            tasksTableBody.innerHTML = ''; 
+            if (!currentProject || currentProject.tasks.length === 0) {
+                noTasksRow.classList.remove('d-none'); 
+                tasksTableBody.appendChild(noTasksRow);
+                taskCountEl.textContent = currentProject && currentProject.name ? `No tasks yet for "${currentProject.name}".` : "No active project or tasks.";
+            } else {
+                noTasksRow.classList.add('d-none');
+                taskCountEl.textContent = `${currentProject.tasks.length} task(s) in "${currentProject.name}".`;
+                currentProject.tasks.forEach(task => {
+                    // ... (rest of the row rendering is the same)
+                    const row = tasksTableBody.insertRow();
+                    row.insertCell().textContent = task.name;
+                    row.insertCell().textContent = task.optimistic.toFixed(2);
+                    row.insertCell().textContent = task.mostLikely.toFixed(2);
+                    row.insertCell().textContent = task.pessimistic.toFixed(2);
+                    row.insertCell().textContent = task.expectedTime.toFixed(2);
+                    row.insertCell().textContent = task.variance.toFixed(2);
+                    
+                    const actionsCell = row.insertCell();
+                    actionsCell.classList.add('text-center');
+                    const editBtn = document.createElement('button');
+                    editBtn.innerHTML = `<i class="bi bi-pencil-square"></i>`;
+                    editBtn.classList.add('btn', 'btn-sm', 'btn-outline-warning', 'me-1');
+                    editBtn.title = "Edit Task";
+                    editBtn.onclick = () => populateTaskFormForEdit(task.id);
+                    actionsCell.appendChild(editBtn);
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.innerHTML = `<i class="bi bi-trash3-fill"></i>`;
+                    deleteBtn.classList.add('btn', 'btn-sm', 'btn-outline-danger');
+                    deleteBtn.title = "Delete Task";
+                    deleteBtn.onclick = () => deleteTask(task.id);
+                    actionsCell.appendChild(deleteBtn);
+                });
+            }
+        }
+
+        function renderTotalsAndProbability() {
+            if (!currentProject) { // If no project is active, clear totals and probability
+                totalOptimisticEl.textContent = "0.00"; totalMostLikelyEl.textContent = "0.00";
+                totalPessimisticEl.textContent = "0.00"; totalExpectedTimeEl.textContent = "0.00";
+                totalVarianceEl.textContent = "0.00";
+                projectStdDevDisplay.textContent = "-"; zScoreDisplay.textContent = "-";
+                probabilityDisplay.textContent = "-";
+                probabilityMessage.textContent = "Load or create a project to see analysis.";
+                return;
+            }
+
+            const totalO = currentProject.tasks.reduce((sum, task) => sum + parseFloat(task.optimistic || 0), 0);
+            const totalM = currentProject.tasks.reduce((sum, task) => sum + parseFloat(task.mostLikely || 0), 0);
+            const totalP = currentProject.tasks.reduce((sum, task) => sum + parseFloat(task.pessimistic || 0), 0);
+            const sumOfExpectedTimes = currentProject.tasks.reduce((sum, task) => sum + parseFloat(task.expectedTime || 0), 0);
+            const sumOfVariances = currentProject.tasks.reduce((sum, task) => sum + parseFloat(task.variance || 0), 0);
+
+            totalOptimisticEl.textContent = totalO.toFixed(2); /* ... (rest is same) ... */
+            totalMostLikelyEl.textContent = totalM.toFixed(2);
+            totalPessimisticEl.textContent = totalP.toFixed(2);
+            totalExpectedTimeEl.textContent = sumOfExpectedTimes.toFixed(2);
+            totalVarianceEl.textContent = sumOfVariances.toFixed(2);
+
+            const TdFromInput = parseFloat(desiredCompletionTimeInput.value);
+            if (!isNaN(TdFromInput) && TdFromInput > 0) {
+                currentProject.desiredCompletionTime = TdFromInput;
+                // No need to call saveCurrentProject() here, it will be called by the input event listener
+            } else if (desiredCompletionTimeInput.value.trim() === "") {
+                 currentProject.desiredCompletionTime = null;
+            }
+
+            const Td = currentProject.desiredCompletionTime;
+            // ... (rest of probability calculation is the same) ...
+            projectStdDevDisplay.textContent = "-"; zScoreDisplay.textContent = "-";
+            probabilityDisplay.textContent = "-";
+            probabilityMessage.textContent = "Enter a 'Desired Completion Time' above to calculate probability.";
+            probabilityDisplay.classList.remove('text-danger', 'text-warning', 'text-success');
+
+            if (currentProject.tasks.length === 0) {
+                 probabilityMessage.textContent = "Add tasks to the project to enable probability analysis.";
+                 return;
+            }
+            
+            if (Td === null || isNaN(Td) || Td <= 0) {
+                if (desiredCompletionTimeInput.value.trim() !== "" && (isNaN(Td) || Td <= 0)) {
+                     probabilityMessage.textContent = "Desired Completion Time must be a positive number.";
+                }
+                return;
+            }
+
+            const projectStandardDeviation = Math.sqrt(sumOfVariances);
+            projectStdDevDisplay.textContent = projectStandardDeviation.toFixed(2);
+
+            if (projectStandardDeviation === 0) {
+                zScoreDisplay.textContent = "N/A";
+                if (Td >= sumOfExpectedTimes) {
+                    probabilityDisplay.textContent = "100.00%"; probabilityDisplay.classList.add('text-success');
+                    probabilityMessage.textContent = `The project is certain to be completed as Desired Time (${Td}) ≥ ∑te (${sumOfExpectedTimes.toFixed(2)}) and there's no variance.`;
+                } else {
+                    probabilityDisplay.textContent = "0.00%"; probabilityDisplay.classList.add('text-danger');
+                    probabilityMessage.textContent = `The project cannot be completed as Desired Time (${Td}) < ∑te (${sumOfExpectedTimes.toFixed(2)}) and there's no variance.`;
+                }
+                return;
+            }
+
+            const z = (Td - sumOfExpectedTimes) / projectStandardDeviation;
+            zScoreDisplay.textContent = z.toFixed(2);
+            const probability = standardNormalCDF(z);
+            probabilityDisplay.textContent = (probability * 100).toFixed(2) + "%";
+            if (probability >= 0.85) probabilityDisplay.classList.add('text-success');
+            else if (probability >= 0.60) probabilityDisplay.classList.add('text-warning');
+            else probabilityDisplay.classList.add('text-danger');
+            probabilityMessage.textContent = `There is a ${(probability * 100).toFixed(2)}% chance of completing the project within ${Td} time units.`;
+        }
+
+        function renderSavedProjectsList() {
+            savedProjectsListEl.innerHTML = ''; // Clear current list
+            if (allProjects.length === 0) {
+                noSavedProjectsMsgEl.classList.remove('d-none');
+                clearAllProjectsBtn.classList.add('d-none');
+            } else {
+                noSavedProjectsMsgEl.classList.add('d-none');
+                clearAllProjectsBtn.classList.remove('d-none');
+                allProjects.forEach(proj => {
+                    const listItem = document.createElement('div');
+                    listItem.classList.add('list-group-item', 'list-group-item-action', 'd-flex', 'justify-content-between', 'align-items-center');
+                    listItem.setAttribute('role', 'button');
+                    listItem.innerHTML = `
+                        <span>${proj.name} <small class="text-muted">(${proj.tasks.length} tasks)</small></span>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary me-2 load-project-btn" title="Load Project"><i class="bi bi-folder2-open"></i> Load</button>
+                            <button class="btn btn-sm btn-outline-danger delete-project-btn" title="Delete Project"><i class="bi bi-trash3"></i></button>
+                        </div>
+                    `;
+                    listItem.querySelector('.load-project-btn').addEventListener('click', (e) => {
+                        e.stopPropagation(); // Prevent outer div click if needed
+                        loadProjectForEditing(proj.id);
+                    });
+                    listItem.querySelector('.delete-project-btn').addEventListener('click', (e) => handleDeleteProjectFromList(proj.id, e));
+                    savedProjectsListEl.appendChild(listItem);
+                });
+            }
+        }
+
+        // --- Import/Export Functions ---
+        function handleExportJson() {
+            if (!currentProject || !currentProject.name) { displayMessage("No active project to export.", "error"); return; }
+            // Ensure currentProject.desiredCompletionTime is up-to-date from the input before export
+            const tdValueFromInput = parseFloat(desiredCompletionTimeInput.value);
+            if (!isNaN(tdValueFromInput) && tdValueFromInput > 0) {
+                currentProject.desiredCompletionTime = tdValueFromInput;
+            } else if (desiredCompletionTimeInput.value.trim() === "") {
+                currentProject.desiredCompletionTime = null;
+            }
+            // Make sure the currentProject in allProjects array is also updated before export
+            saveCurrentProject(); // This ensures the version in allProjects is the latest
+
+            const projectToExport = allProjects.find(p => p.id === currentProject.id);
+            if (!projectToExport) {
+                 displayMessage("Error finding project data for export.", "error");
+                 return;
+            }
+
+
+            const jsonData = JSON.stringify(projectToExport, null, 2); // Export the version from allProjects
+            const blob = new Blob([jsonData], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url;
+            const filename = projectToExport.name.replace(/[^a-z0-9_]/gi, '_').toLowerCase() || 'pert_project';
+            a.download = `${filename}_pert_project_data.json`;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+            displayMessage(`Project "${projectToExport.name}" exported successfully.`, "success");
+        }
+
+        function triggerImport() { importJsonInput.click(); }
+        
+        function handleImportJson(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            if (file.type !== "application/json") { displayMessage("Invalid file type. Select JSON.", "error"); importJsonInput.value = ""; return; }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    // Validate imported data structure
+                    if (typeof importedData.name === 'string' && Array.isArray(importedData.tasks) &&
+                        importedData.tasks.every(task => 
+                            typeof task.id === 'number' && typeof task.name === 'string' &&
+                            typeof task.optimistic === 'number' && typeof task.mostLikely === 'number' &&
+                            typeof task.pessimistic === 'number' && 
+                            (typeof task.expectedTime === 'number' || typeof task.te === 'number') &&
+                            typeof task.variance === 'number' 
+                        ) && (importedData.desiredCompletionTime === null || typeof importedData.desiredCompletionTime === 'number' || importedData.desiredCompletionTime === undefined) // Allow undefined for older exports
+                    ) {
+                        
+                        const newProjectId = importedData.id || Date.now(); // Use imported ID or generate new if missing
+                        const existingProjectIndex = allProjects.findIndex(p => p.id === newProjectId || p.name.toLowerCase() === importedData.name.toLowerCase());
+
+                        if (existingProjectIndex > -1) {
+                            if (!confirm(`A project named "${importedData.name}" or with the same ID already exists. Overwrite it?`)) {
+                                importJsonInput.value = ""; return;
+                            }
+                            // Update existing project
+                            allProjects[existingProjectIndex] = {
+                                id: newProjectId, // Ensure ID is consistent
+                                name: importedData.name,
+                                tasks: importedData.tasks.map(task => { /* ... task mapping ... */ 
+                                    const o = task.optimistic; const m = task.mostLikely; const p = task.pessimistic;
+                                    const metrics = calculateTaskMetrics(o,m,p);
+                                    return {
+                                        id: task.id || Date.now(), name: task.name, optimistic: o, mostLikely: m, pessimistic: p,
+                                        expectedTime: task.expectedTime !== undefined ? task.expectedTime : (task.te !== undefined ? task.te : metrics.te),
+                                        variance: task.variance !== undefined ? task.variance : metrics.variance
+                                    };
+                                }),
+                                desiredCompletionTime: importedData.desiredCompletionTime !== undefined ? importedData.desiredCompletionTime : null
+                            };
+                            currentProject = JSON.parse(JSON.stringify(allProjects[existingProjectIndex])); // Load the updated one
+                            displayMessage(`Project "${currentProject.name}" updated from import.`, "success");
+                        } else {
+                            // Add as new project
+                            currentProject = {
+                                id: newProjectId,
+                                name: importedData.name,
+                                tasks: importedData.tasks.map(task => { /* ... task mapping ... */ 
+                                     const o = task.optimistic; const m = task.mostLikely; const p = task.pessimistic;
+                                    const metrics = calculateTaskMetrics(o,m,p);
+                                    return {
+                                        id: task.id || Date.now(), name: task.name, optimistic: o, mostLikely: m, pessimistic: p,
+                                        expectedTime: task.expectedTime !== undefined ? task.expectedTime : (task.te !== undefined ? task.te : metrics.te),
+                                        variance: task.variance !== undefined ? task.variance : metrics.variance
+                                    };
+                                }),
+                                desiredCompletionTime: importedData.desiredCompletionTime !== undefined ? importedData.desiredCompletionTime : null
+                            };
+                            allProjects.push(JSON.parse(JSON.stringify(currentProject))); // Add a copy
+                            displayMessage(`Project "${currentProject.name}" imported successfully.`, "success");
+                        }
+                        
+                        saveAllProjectsToStorage(); // Save all projects array
+                        
+                        // Update UI for the loaded/imported project
+                        currentProjectNameDisplay.textContent = currentProject.name;
+                        desiredCompletionTimeInput.value = currentProject.desiredCompletionTime !== null ? currentProject.desiredCompletionTime : "";
+                        switchToTaskManagementView();
+                        resetTaskForm(); 
+                        renderTasksTable();
+                        renderTotalsAndProbability();
+                        taskNameInput.focus();
+                    } else {
+                        displayMessage("Invalid JSON structure. Check file.", "error");
+                    }
+                } catch (error) { displayMessage(`Error parsing JSON: ${error.message}`, "error");
+                } finally { importJsonInput.value = ""; }
+            };
+            reader.onerror = function() { displayMessage("Error reading file.", "error"); importJsonInput.value = ""; };
+            reader.readAsText(file);
+        }
+
+        // --- Event Listeners ---
+        createNewProjectBtn.addEventListener('click', handleCreateNewProject);
+        newProjectNameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleCreateNewProject(); });
+        
+        importJsonBtnSetup.addEventListener('click', triggerImport);
+        clearAllProjectsBtn.addEventListener('click', handleClearAllProjects);
+        backToProjectsBtn.addEventListener('click', switchToStartScreen);
+
+        exportJsonBtnHeader.addEventListener('click', handleExportJson);
+        // importJsonBtnHeader.addEventListener('click', triggerImport); // Removed, import is on start screen
+
+        importJsonInput.addEventListener('change', handleImportJson);
+        
+        desiredCompletionTimeInput.addEventListener('input', () => {
+            if(currentProject) { // Only update if there's an active project
+                const TdValue = parseFloat(desiredCompletionTimeInput.value);
+                if (!isNaN(TdValue) && TdValue > 0) {
+                    currentProject.desiredCompletionTime = TdValue;
+                } else if (desiredCompletionTimeInput.value.trim() === "") {
+                    currentProject.desiredCompletionTime = null;
+                }
+                // No direct save here, renderTotalsAndProbability will use the updated currentProject.desiredCompletionTime
+                // and then other actions like adding/updating task will trigger saveCurrentProject()
+                renderTotalsAndProbability();
+                saveCurrentProject(); // Save changes to Td immediately
+            }
+        });
+
+
+        addOrUpdateTaskBtn.addEventListener('click', handleAddOrUpdateTask);
+        cancelEditBtn.addEventListener('click', resetTaskForm);
+        pessimisticTimeInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleAddOrUpdateTask(); });
+        taskNameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') optimisticTimeInput.focus(); });
+        optimisticTimeInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') mostLikelyTimeInput.focus(); });
+        mostLikelyTimeInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') pessimisticTimeInput.focus(); });
+
+        function initializePage() {
+            loadProjectsFromStorage(); // Load projects first
+            switchToStartScreen();     // Then switch to start screen which uses loaded projects
+            
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        }
+        document.addEventListener('DOMContentLoaded', initializePage);
+    </script>
+</body>
+</html>
+
