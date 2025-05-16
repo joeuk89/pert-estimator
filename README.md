@@ -46,7 +46,7 @@ The Z-score is then used with a standard normal distribution table (or a CDF fun
 
 ### 1. Starting Up
 
-* When you first open the application, you'll see the "Start or Load a Project" screen.
+* When you first open the application, you'll see the start screen with options to create a new project, load an existing one or import a project.
 * **Create New Project:** Enter a name for your new project in the "New Project Name" field and click "Create Project".
 * **Load Saved Project:** If you have previously saved projects, they will be listed under "Saved Projects."
     * Click anywhere on a project's row or its "Load" button to open it.
